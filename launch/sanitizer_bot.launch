@@ -1,0 +1,10 @@
+<launch>
+    <node name="big_house" pkg="turtlebot3_big_house" type="turtlebot3_big_house.launch" output="screen" />
+    <node name="slam" pkg="turtlebot3_slam" type="turtlebot3_slam.launch" />
+    <node name="move_base" pkg="turtlebot3_navigation" type="move_base.launch" />
+    <node name="explore_lite" pkg="explore_lite" type="explore.lite" />
+    <node name="navigation" pkg="turtlebot3_navigation" type="turtlebot3_navigation.launch">
+        <rosparam map_file="/home/watch/Documents/uv_bot/my_map.yaml" output="screen"/> 
+    </node>
+    <node name="goals" pkg="simple_navigation_goals" type="simple_navigation_goals.py" output="screen"/>
+</launch>
