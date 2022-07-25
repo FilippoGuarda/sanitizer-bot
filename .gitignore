@@ -1,5 +1,6 @@
 *
 !*/
+/eigen-3.4.0
 !.gitignore
 !*.py
 !*.cpp
