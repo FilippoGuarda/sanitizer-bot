@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   float distance;
   bool obstacleFound = false; // if true an obstacle is found between two cell
   float tempPower = 0;
-  float minPower = 0;
+  float minPower = 100;
   long int deltaT; // loop time in [ms]
   float deltaT_s;  // loop time in [s]
 

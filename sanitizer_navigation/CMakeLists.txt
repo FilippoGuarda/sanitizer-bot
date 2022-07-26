@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(kill_virus)
+project(sanitizer_navigation)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -9,6 +9,7 @@ project(kill_virus)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -103,7 +104,9 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES kill_virus
-#  CATKIN_DEPENDS rospy
+  CATKIN_DEPENDS 
+  rospy
+  message_runtime
 #  DEPENDS system_lib
 )
 
