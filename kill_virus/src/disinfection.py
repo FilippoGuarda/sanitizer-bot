@@ -16,6 +16,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, Twist
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 from tf.transformations import euler_from_quaternion
+
+from uv_visualization.msg import lowestIrradiation, subMapCoords
 #from nav_msgs.srv import GetPlan
 #from rosservice import *
 
@@ -53,6 +55,11 @@ class Disinfection:
         self.laser_subscriber = rospy.Subscriber(
             "/scan", LaserScan, self.laser_callback)
 
+        # uv_map
+
+        self.uv_map.subscriber = rospy.Subscriber(
+            "/lowestIrradiation", self.irradiation_callback)
+
         # Movebase
         self.pub = rospy.Publisher(
             "goal_minimum_energy", PoseWithCovarianceStamped, queue_size=1)
@@ -60,14 +67,15 @@ class Disinfection:
         self.movebase_subscriber = rospy.Subscriber(
             "goal_minimum_energy", PoseWithCovarianceStamped, self.movebase_client)
 
-########## LINEAR STRETCHING ##########
+
+""" ########## LINEAR STRETCHING ##########
 
     # Linear stretching of the color to obtain a crop of the max color from 255 to 10
     def linear_stretching(self, img, max_value, min_value):
         img[img <= min_value] = min_value
         img[img >= max_value] = max_value
         linear_stretched_img = 255/(max_value-min_value)*(img-min_value)
-        return linear_stretched_img
+        return linear_stretched_img """
 
 ########## MOVE_BASE ##########
     def movebase_client(self, msg):
@@ -190,6 +198,13 @@ class Disinfection:
         self.greyscale[self.greyscale == 255] = 0
         self.greyscale[self.greyscale == 0] = 0
         self.greyscale[self.greyscale == 100] = 255
+
+######### LOWEST IRRADIATION ##########
+    def irradiation_callback(self, msg):
+        self.lowest_x = msg.lowest_x
+        self.lowest_y = msg.lowest_y
+        self.roomDone = msg.room_done
+
 
 ########## MAIN ##########
 
