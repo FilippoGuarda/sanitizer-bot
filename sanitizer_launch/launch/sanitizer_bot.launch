@@ -9,6 +9,6 @@
     </include> 
 
     <include file="$(find uv_visualization)/launch/visualization.launch" />
-    <node name="navigation" pkg="sanitizer_navigation" type="disinfection.py" output="screen"/>
+    <include file="$(find sanitizer_navigation)/launch/navigation.launch" />
     <!-- <node name="goals" pkg="simple_navigation_goals" type="simple_navigation_goals.py" output="screen"/> -->
 </launch>

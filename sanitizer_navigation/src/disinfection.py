@@ -1,23 +1,17 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from operator import sub
 import rospy
 import numpy as np
 import actionlib
 import time
 import math
-import cv2
-import random
-from std_msgs.msg import Int64
-from std_srvs.srv import SetBool
-import sys
-from std_msgs.msg import Float64MultiArray
 from nav_msgs.msg import Odometry, OccupancyGrid
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, \
     Twist
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import String
 from tf.transformations import euler_from_quaternion
 
 from uv_visualization.msg import lowestIrradiation, subMapCoords
@@ -255,9 +249,13 @@ def main():
         x2 = float(roomList[2])
         y2 = float(roomList[3])
 
-        pub = rospy.Publisher()
-
-        
+        pub = rospy.Publisher("/submap", subMapCoords)
+        coords = subMapCoords()
+        coords.x1 = x1
+        coords.y1 = y1
+        coords.x2 = x2
+        coords.y2 = y2
+        pub.publish(coords)
 
         # Select as starting point the center of the room
 
@@ -273,7 +271,6 @@ def main():
         obc.initFlag = 0
 
         # Kill coronavirus in the room
-        # The timer is used to send the goal with regularity
 
         tim = time.time()
         while not rospy.is_shutdown() and not obc.roomDone:
