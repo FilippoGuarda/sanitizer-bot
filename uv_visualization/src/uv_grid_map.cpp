@@ -50,6 +50,7 @@ void gridMapCallback(const nav_msgs::OccupancyGrid& msg)
   map_resolution = map.getLength().x()/ map.getSize()(0);
 
 }
+
 /***/
 
 
@@ -142,6 +143,12 @@ int main(int argc, char** argv)
                   map1.atPosition("Layer1", currentPosition) = tempPower;
                 }
             }
+
+            /* //Find leaset irradiated spot, if it's over a certain treshold, set room_done to true
+            for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator){
+
+              cout << "The value at index " << (*iterator).transpose() << " is " << map.at("layer", *iterator) << endl;
+            } */
         }
       }    
 

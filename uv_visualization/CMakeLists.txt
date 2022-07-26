@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(sanitizer_robot)
+project(uv_visualization)
 
 find_package(catkin REQUIRED COMPONENTS
-  OpenCV
   actionlib
   move_base_msgs
   roscpp
   std_msgs
   image_transport
   cv_bridge
+  message_generation
   
   grid_map_demos
   grid_map_core
@@ -26,9 +26,21 @@ find_package(catkin REQUIRED COMPONENTS
   filters
 )
 
+add_message_files(
+  FILES
+  lowestIrradiation.msg
+  subMapCoords.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+# If another package depends on this, it will need also message_runtime
 catkin_package(
 #  LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS
+  CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
@@ -37,7 +49,7 @@ include_directories(
 )
 
 
-add_executable(uv_visualization src/visualization/uv_grid_map.cpp)
+add_executable(uv_visualization src/uv_grid_map.cpp)
 target_link_libraries(uv_visualization ${catkin_LIBRARIES})
 
 # Mark executables and/or libraries for installation
