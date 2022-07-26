@@ -6,6 +6,8 @@
 
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
+#include <uv_visualization/lowestIrradiation.h>
+#include <uv_visualization/subMapCoords.h>
 
 #include "uv_utility.h"
 
@@ -25,6 +27,13 @@ float map_size_y;
 float map_position_x;
 float map_position_y;
 float map_resolution;
+int subMap_x1;
+int subMap_y1;
+int subMap_x2;
+int subMap_y2;
+int lowestIrradiation_x;
+int lowestIrradiation_y;
+bool roomDone = false;
 bool mapOk = false;
 
 /*** Callbacks ***/
@@ -51,6 +60,13 @@ void gridMapCallback(const nav_msgs::OccupancyGrid& msg)
 
 }
 
+void subMapCallback(const uv_visualization::subMapCoords::ConstPtr& msg){
+  subMap_x1 = msg->x1;
+  subMap_y1 = msg->y1;
+  subMap_x2 = msg->x2;
+  subMap_y2 = msg->y2;
+}
+
 /***/
 
 
@@ -61,7 +77,9 @@ int main(int argc, char** argv)
   ros::NodeHandle nh("~");
   ros::Subscriber grid_map_sub_ = nh.subscribe("/map", 1, gridMapCallback);
   ros::Subscriber odom_sub_ = nh.subscribe("/odom", 1, odomCallback);
+  ros::Subscriber sub_map_sub = nh.subscribe("/submap", 1, subMapCallback)
   ros::Publisher grid_map_pub_ = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
+  ros::Publisher lowest_irradiation_pub_ = nh.advertise<uv_visualization::lowestIrradiation>("/lowestIrradiation", 10)
 
   //Define new map
   map1.setFrameId("map");
@@ -91,34 +109,33 @@ int main(int argc, char** argv)
 
   while (nh.ok()) {
 
-    if(mapOk == true)
-    {
-        End = std::chrono::steady_clock::now();
+    if(mapOk == true){
+      End = std::chrono::steady_clock::now();
 
-        deltaT = std::chrono::duration_cast<std::chrono::milliseconds>(End-Start).count();
-        deltaT_s = float(deltaT)/1000;
+      deltaT = std::chrono::duration_cast<std::chrono::milliseconds>(End-Start).count();
+      deltaT_s = float(deltaT)/1000;
 
-        Start = std::chrono::steady_clock::now();
+      Start = std::chrono::steady_clock::now();
 
-        ROS_INFO("Delta T: %f", deltaT_s);
-        //Circle iterator specifications
-        Position center(turtle_odom.pose.pose.position.x-MAP_ODOM_X_DISPLACEMENT, turtle_odom.pose.pose.position.y-MAP_ODOM_Y_DISPLACEMENT);
+      ROS_INFO("Delta T: %f", deltaT_s);
+      //Circle iterator specifications
+      Position center(turtle_odom.pose.pose.position.x-MAP_ODOM_X_DISPLACEMENT, turtle_odom.pose.pose.position.y-MAP_ODOM_Y_DISPLACEMENT);
         
-        for (grid_map::CircleIterator iterator(map, center, radius); !iterator.isPastEnd(); ++iterator) {
+      for (grid_map::CircleIterator iterator(map, center, radius); !iterator.isPastEnd(); ++iterator) {
 
         //get cell position 
         map.getPosition(*iterator, currentPosition);
 
         obstacleFound = false;
         
-        if(sqrt(pow(center.x()-currentPosition.x(),2) + pow(center.y()-currentPosition.y(),2)) >= 0.11)
-        {
-            //These are in the gridmap reference frame because we check obstacles in a map transleted of 0.4 0.4 wrt the map reference frame.
-            Index start(round(-(center.x()- map_position_x)/map_resolution)+map_size_x/2,round(-(center.y()-map_position_y)/map_resolution)+map_size_y/2);
-            Index end(round(-(currentPosition.x()- map_position_x)/map_resolution)+map_size_x/2,round(-(currentPosition.y()-map_position_y)/map_resolution)+map_size_y/2);
+        if(sqrt(pow(center.x()-currentPosition.x(),2) + pow(center.y()-currentPosition.y(),2)) >= 0.11){
 
-            //Line iterator
-            for (grid_map::LineIterator iterator1(map, start, end); !iterator1.isPastEnd(); ++iterator1) {
+          //These are in the gridmap reference frame because we check obstacles in a map transleted of 0.4 0.4 wrt the map reference frame.
+          Index start(round(-(center.x()- map_position_x)/map_resolution)+map_size_x/2,round(-(center.y()-map_position_y)/map_resolution)+map_size_y/2);
+          Index end(round(-(currentPosition.x()- map_position_x)/map_resolution)+map_size_x/2,round(-(currentPosition.y()-map_position_y)/map_resolution)+map_size_y/2);
+
+          //Line iterator
+          for (grid_map::LineIterator iterator1(map, start, end); !iterator1.isPastEnd(); ++iterator1) {
 
             //Obstacle Check
             if(map.at("Layer1", *iterator1) == obstacle_value)
@@ -127,29 +144,32 @@ int main(int argc, char** argv)
             //If obstacle is found exit the line iterator
             if(obstacleFound == true)
                 break;
-            }   
+          }   
 
-            //Update Energy
-            if((obstacleFound == false) && (map.at("Layer1", *iterator) != obstacle_value) )
-            {
-                distance = pow(turtle_odom.pose.pose.position.x-currentPosition.x(),2) + pow(turtle_odom.pose.pose.position.y-currentPosition.y(),2);
+          //Update Energy
+          if((obstacleFound == false) && (map.at("Layer1", *iterator) != obstacle_value) ){
 
-                tempPower = map1.atPosition("Layer1", currentPosition) + (Power*(deltaT_s))/distance;
+            distance = pow(turtle_odom.pose.pose.position.x-currentPosition.x(),2) + pow(turtle_odom.pose.pose.position.y-currentPosition.y(),2);
 
-                if(tempPower >= cleanTreshold){
-                  map1.atPosition("Layer1", currentPosition) = cleanTreshold;
-                }
-                else{
-                  map1.atPosition("Layer1", currentPosition) = tempPower;
-                }
+            tempPower = map1.atPosition("Layer1", currentPosition) + (Power*(deltaT_s))/distance;
+
+            if(tempPower >= cleanTreshold){
+              map1.atPosition("Layer1", currentPosition) = cleanTreshold;
             }
+            else{
+              map1.atPosition("Layer1", currentPosition) = tempPower;
+            }
+          }
 
-            /* //Find leaset irradiated spot, if it's over a certain treshold, set room_done to true
-            for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator){
-
-              cout << "The value at index " << (*iterator).transpose() << " is " << map.at("layer", *iterator) << endl;
-            } */
+            
         }
+
+        /* //Find least irradiated spot, if it's over a certain treshold, set room_done to true
+        for (grid_map::GridMapIterator iterator(map); !iterator.isPastEnd(); ++iterator){
+
+          cout << "The value at index " << (*iterator).transpose() << " is " << map.at("layer", *iterator) << endl;
+        } */
+
       }    
 
     }
@@ -159,6 +179,7 @@ int main(int argc, char** argv)
     grid_map_msgs::GridMap message;
     GridMapRosConverter::toMessage(map1, message);
     grid_map_pub_.publish(message);
+    lowest_irradiation_pub_.publish(irCoords)
     //SpinOnce to run callbacks
     ros::spinOnce();
     // Wait for next cycle.
