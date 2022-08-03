@@ -19,7 +19,7 @@ from uv_visualization.msg import lowestIrradiation, subMapCoords
 
 class Disinfection:
 
-    # ######### INITIALIZATION ##########
+    ########## INITIALIZATION ##########
 
     def __init__(self):
 
@@ -219,6 +219,8 @@ def main():
     rate = rospy.Rate(10)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
 
+    # initial positioning
+
     # Read the rooms file
 
     rooms = \
@@ -253,10 +255,10 @@ def main():
         y2 = float(roomList[3])
 
         coords = subMapCoords()
-        coords.x1 = x1 + 38*0.2
-        coords.y1 = y1 + 38*0.2
-        coords.x2 = x2 + 38*0.2
-        coords.y2 = y2 + 38*0.2
+        coords.x1 = x1 + 38*cellSize
+        coords.y1 = y1 + 38*cellSize
+        coords.x2 = x2 + 38*cellSize
+        coords.y2 = y2 + 38*cellSize
 
         rospy.loginfo(coords)
         obc.sub_pub.publish(coords)
