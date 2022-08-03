@@ -3,8 +3,12 @@
     <!-- <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch" /> -->
     <!-- <include file="$(find turtlebot3_navigation)/launch/move_base.launch" /> -->
     <node name="explore_lite" pkg="explore_lite" type="explore.lite" />
+
     <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
     <arg name="map_file" value="/home/watch/Documents/uv_bot/my_map.yaml" />
     </include> 
+
+    <include file="$(find uv_visualization)/launch/visualization.launch" />
+    <include file="$(find sanitizer_navigation)/launch/disinfection.launch" />
     <!-- <node name="goals" pkg="simple_navigation_goals" type="simple_navigation_goals.py" output="screen"/> -->
 </launch>

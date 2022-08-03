@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="sanitizer_navigation" type="disinfection.py" name="disinfection" output="screen" />
+</launch>
