@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from operator import sub
+from unittest import result
 import rospy
 import numpy as np
 import actionlib
@@ -13,12 +14,8 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, \
     Twist
 from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
-
 from uv_visualization.msg import lowestIrradiation, subMapCoords
 
-
-# from nav_msgs.srv import GetPlan
-# from rosservice import *
 
 class Disinfection:
 
@@ -60,9 +57,10 @@ class Disinfection:
 
         # uv_map
 
-        self.uv_map.subscriber = rospy.Subscriber('/lowestIrradiation', lowestIrradiation,
+        self.uv_map_subscriber = rospy.Subscriber('/lowestIrradiation', lowestIrradiation,
                 self.irradiation_callback)
 
+        self.sub_pub = rospy.Publisher("/submap", subMapCoords, queue_size=10)
         # Movebase
 
         self.pub = rospy.Publisher('goal_minimum_energy',
@@ -224,7 +222,7 @@ def main():
     # Read the rooms file
 
     rooms = \
-        open('/home/carlopellettieri/catkin_ws/src/kill_virus/src/rooms.txt'
+        open('/home/watch/Documents/uv_bot/src/sanitizer_navigation/src/rooms.txt'
              , 'r')
     for (num, room) in enumerate(rooms, start=1):
 
@@ -232,6 +230,11 @@ def main():
         minEnergy = 0
 
         # Printing the goal
+
+        for f in range(4):
+            result_init = obc.movebase_client((f + 2, f - 2))
+            if result_init:
+                rospy.loginfo("finding myself")
 
         rospy.loginfo('Room ' + str(num) + ' received!')
 
@@ -249,18 +252,22 @@ def main():
         x2 = float(roomList[2])
         y2 = float(roomList[3])
 
-        pub = rospy.Publisher("/submap", subMapCoords)
         coords = subMapCoords()
-        coords.x1 = x1
-        coords.y1 = y1
-        coords.x2 = x2
-        coords.y2 = y2
-        pub.publish(coords)
+        coords.x1 = x1 + 38*0.2
+        coords.y1 = y1 + 38*0.2
+        coords.x2 = x2 + 38*0.2
+        coords.y2 = y2 + 38*0.2
+
+        rospy.loginfo(coords)
+        obc.sub_pub.publish(coords)
+        """ while not rospy.is_shutdown():
+            
+            rate.sleep() """
 
         # Select as starting point the center of the room
 
-        start_x = x2 - x1 / 2 * cellSize
-        start_y = y2 - y1 / 2 * cellSize
+        start_x = x2 - x1 / 2  
+        start_y = y2 - y1 / 2 
 
         # Call the movebase function to reach the initial point in the room
 
