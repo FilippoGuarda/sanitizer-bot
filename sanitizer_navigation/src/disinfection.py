@@ -232,7 +232,7 @@ def main():
     print(process.is_alive())
     process.stop()
 
-    
+    #TODO: move localization to separate file
 
     # moves robot in a lemniscate of Gerono trajectory
     for f in range(4):
