@@ -4,6 +4,7 @@
 from operator import sub
 from unittest import result
 import rospy
+import roslaunch
 import numpy as np
 import actionlib
 import time
@@ -219,7 +220,25 @@ def main():
     rate = rospy.Rate(10)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
 
-    # initial positioning
+    # Node localization, calls the localization node
+    package = 'rqt_gui'
+    executable = 'rqt_gui'
+    node = roslaunch.core.Node(package, executable)
+
+    launch = roslaunch.scriptapi.ROSLaunch()
+    launch.start()
+
+    process = launch.launch(node)
+    print(process.is_alive())
+    process.stop()
+
+    
+
+    # moves robot in a lemniscate of Gerono trajectory
+    for f in range(4):
+            result_init = obc.movebase_client((f + 2, f - 2))
+            if result_init:
+                rospy.loginfo("finding myself")
 
     # Read the rooms file
 
@@ -229,14 +248,8 @@ def main():
     for (num, room) in enumerate(rooms, start=1):
 
         obc.initFlag = 1
-        minEnergy = 0
 
         # Printing the goal
-
-        for f in range(4):
-            result_init = obc.movebase_client((f + 2, f - 2))
-            if result_init:
-                rospy.loginfo("finding myself")
 
         rospy.loginfo('Room ' + str(num) + ' received!')
 

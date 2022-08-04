@@ -27,12 +27,12 @@ float map_size_y;
 float map_position_x;
 float map_position_y;
 float map_resolution;
-int subMap_x1;
-int subMap_y1;
-int subMap_x2;
-int subMap_y2;
-int lowestIrradiation_x;
-int lowestIrradiation_y;
+float subMap_x1;
+float subMap_y1;
+float subMap_x2;
+float subMap_y2;
+float lowestIrradiation_x;
+float lowestIrradiation_y;
 bool roomDone = false;
 bool mapOk = false;
 
