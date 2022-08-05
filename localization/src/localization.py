@@ -35,11 +35,13 @@ class Localization:
     def laser_callback(self, msg):
         self.laser_scan_values = msg.ranges
 
+
+
 ########## MAIN ##########
 
 
 def main():
-    obc = Localization()
+    loc = Localization()
 
     # Node initialization
     rospy.init_node('localize_itself', anonymous=True)
@@ -49,46 +51,77 @@ def main():
     t = rospy.ServiceProxy('/move_base/clear_costmaps', Empty)
     g()
     start_time = time.time()
-    tt = 25
+    change_done = False
+    tt = 30
+    turn_rate = 1
 
+    # navigate map using bug algorithm in spiralling patterns
     while not rospy.is_shutdown():
         msg = Twist()
+        elapsed_time = time.time()-start_time
         # Ask to terminal to restart montecarlo or start after
-        if (time.time()-start_time) > tt:
+        if (elapsed_time) > tt:
             msg.linear.x = 0.0
             msg.angular.z = 0.0
-            obc.vel_pub.publish(msg)
-            reboot = input("Reboot Montecarlo? Y or N or Keep going ")
+            loc.vel_pub.publish(msg)
+            reboot = input("Reboot Montecarlo? Y or N or Keep going.\nPress C to clear costmap.\n ") 
             start_time = time.time()
             if reboot == ("Y"):
                 g()
+                t()
                 msg.linear.x = 0.5
                 msg.angular.z = 0.2
-                obc.vel_pub.publish(msg)
+                loc.vel_pub.publish(msg)
             elif reboot == ("N"):
                 t()
                 break
+            elif reboot == ("C"):
+                t()
+                msg.linear.x = 0.5
+                msg.angular.z = 0.0
+                loc.vel_pub.publish(msg)
             else:
                 msg.linear.x = 0.5
                 msg.angular.z = 0.0
-                obc.vel_pub.publish(msg)
+                loc.vel_pub.publish(msg)
                 pass
 
         # Definition of speed of motion
-        msg.linear.x = 0.5
-        msg.angular.z = -0.2
-        obc.vel_pub.publish(msg)
-        angle3 = obc.laser_scan_values[0:25]
-        angle2 = obc.laser_scan_values[335:360]
+        msg.linear.x = 0.5      
+        #msg.angular.z = -turn_rate/5
+        loc.vel_pub.publish(msg)
+        angle3 = loc.laser_scan_values[0:25]
+        angle2 = loc.laser_scan_values[335:360]
+        angle4 = loc.laser_scan_values[250:290]
         angle = angle3+angle2
 
         # Publishing of the velocity
         for i in range(len(angle)):
-            if angle[i] <= 0.5:
+            if angle[i] <= 0.75:
                 msg.linear.x = 0.0
-                msg.angular.z = 1
-                obc.vel_pub.publish(msg)
+                msg.angular.z = turn_rate
+                loc.vel_pub.publish(msg)
+                turning = True
+            else:
+                turning = False
+        # keep distance from wall
+        for i in range(len(angle4)):
+            if angle4[i] >= 1 and not turning:
+                msg.linear.x = 0.5
+                msg.angular.z = -turn_rate
+                loc.vel_pub.publish(msg)
+            if angle4[i] <= 1 and angle4[i] >= 0.5 and not turning:
+                msg.linear.x = 0.5
+                msg.angular.z = 0
+                loc.vel_pub.publish(msg)
+            if angle4[i] <= 0.5 and not turning:
+                msg.linear.x = 0.5
+                msg.angular.z = turn_rate
+                loc.vel_pub.publish(msg)
+                print(f"a bit close {elapsed_time} \n")
         rate.sleep()
+    
+    rospy.signal_shutdown("localization ended")
 
 
 if __name__ == '__main__':

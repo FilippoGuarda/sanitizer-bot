@@ -216,6 +216,7 @@ def main():
 
     # Node initialization
 
+    #TODO: move localization to separate file
     rospy.init_node('simple_class', anonymous=True)
     rate = rospy.Rate(10)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
@@ -231,8 +232,6 @@ def main():
     process = launch.launch(node)
     print(process.is_alive())
     process.stop()
-
-    #TODO: move localization to separate file
 
     # moves robot in a lemniscate of Gerono trajectory
     for f in range(4):
