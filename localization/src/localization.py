@@ -55,7 +55,10 @@ def main():
     tt = 30
     turn_rate = 1
 
-    # navigate map using bug algorithm in spiralling patterns
+    # navigate map using bug algorithm without a target,
+    # this makes the turtlebot follow the perimeter of the building
+    # even whithout knowing its actual position
+
     while not rospy.is_shutdown():
         msg = Twist()
         elapsed_time = time.time()-start_time

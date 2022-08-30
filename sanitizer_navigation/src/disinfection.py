@@ -62,20 +62,23 @@ class Disinfection:
                 self.irradiation_callback)
 
         self.sub_pub = rospy.Publisher("/submap", subMapCoords, queue_size=10)
+
         # Movebase
 
         self.pub = rospy.Publisher('goal_minimum_energy',
                                    PoseWithCovarianceStamped,
                                    queue_size=1)
+
         self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
-        self.movebase_subscriber = \
-            rospy.Subscriber('goal_minimum_energy',
+
+        self.movebase_subscriber = rospy.Subscriber('goal_minimum_energy',
                              PoseWithCovarianceStamped,
                              self.movebase_client)
 
 ########## MOVE_BASE ##########
 
     def movebase_client(self, msg):
+        
         if self.initFlag:
             x_goal = msg[0]
             y_goal = msg[1]
@@ -84,16 +87,12 @@ class Disinfection:
             y_goal = msg.pose.pose.position.y
 
         # Create an action client called "move_base" with action definition file "MoveBaseAction"
-
-        self.client = actionlib.SimpleActionClient('move_base',
-                MoveBaseAction)
-
+        self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+ 
         # Waits until the action server has started up and started listening for goals.
-
         self.client.wait_for_server()
-
+        
         # Creates a new goal with the MoveBaseGoal constructor
-
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = 'map'
         goal.target_pose.header.stamp = rospy.Time.now()
@@ -222,22 +221,20 @@ def main():
     cellSize = 0.2  # Size of a grid's cell (m)
 
     # Node localization, calls the localization node
-    package = 'rqt_gui'
-    executable = 'rqt_gui'
-    node = roslaunch.core.Node(package, executable)
+
+    package = 'localization'
+    executable = 'localization.py'
+    node = roslaunch.core.Node(package, executable, output='screen', launch_prefix='gnome-terminal --command')
 
     launch = roslaunch.scriptapi.ROSLaunch()
     launch.start()
 
     process = launch.launch(node)
     print(process.is_alive())
-    process.stop()
+    while process.is_alive():
+        rate.sleep()
+    
 
-    # moves robot in a lemniscate of Gerono trajectory
-    for f in range(4):
-            result_init = obc.movebase_client((f + 2, f - 2))
-            if result_init:
-                rospy.loginfo("finding myself")
 
     # Read the rooms file
 
