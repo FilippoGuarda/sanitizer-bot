@@ -35,6 +35,11 @@ class Localization:
     def laser_callback(self, msg):
         self.laser_scan_values = msg.ranges
 
+    ##### LOCALIZATION SIGNAL ######
+    #send signal when localization is done
+
+    
+
 
 
 ########## MAIN ##########

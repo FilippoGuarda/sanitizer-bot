@@ -219,20 +219,6 @@ def main():
     rospy.init_node('simple_class', anonymous=True)
     rate = rospy.Rate(10)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
-
-    # Node localization, calls the localization node
-
-    package = 'localization'
-    executable = 'localization.py'
-    node = roslaunch.core.Node(package, executable, output='screen', launch_prefix='gnome-terminal --command')
-
-    launch = roslaunch.scriptapi.ROSLaunch()
-    launch.start()
-
-    process = launch.launch(node)
-    print(process.is_alive())
-    while process.is_alive():
-        rate.sleep()
     
 
 
@@ -264,16 +250,13 @@ def main():
         y2 = float(roomList[3])
 
         coords = subMapCoords()
-        coords.x1 = x1 + 38*cellSize
-        coords.y1 = y1 + 38*cellSize
-        coords.x2 = x2 + 38*cellSize
-        coords.y2 = y2 + 38*cellSize
+        coords.x1 = x1 
+        coords.y1 = y1 
+        coords.x2 = x2 
+        coords.y2 = y2 
 
         rospy.loginfo(coords)
         obc.sub_pub.publish(coords)
-        """ while not rospy.is_shutdown():
-            
-            rate.sleep() """
 
         # Select as starting point the center of the room
 
