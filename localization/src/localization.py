@@ -8,6 +8,7 @@ from std_msgs.msg import Int64
 from std_srvs.srv import SetBool, Empty
 import sys
 from std_msgs.msg import Float64MultiArray
+from localization.msg import local
 
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from sensor_msgs.msg import LaserScan
@@ -30,13 +31,14 @@ class Localization:
         # Move base
         self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
+        # Localization ended ack
+        self.localization_pub = rospy.Publisher("/localization", local, queue_size=1)
+
 ########## LASER SCAN #########
 
     def laser_callback(self, msg):
         self.laser_scan_values = msg.ranges
 
-    ##### LOCALIZATION SIGNAL ######
-    #send signal when localization is done
 
     
 
@@ -47,6 +49,10 @@ class Localization:
 
 def main():
     loc = Localization()
+
+    is_loc_done = local()
+    is_loc_done.loc_done = False
+    loc.localization_pub.publish(is_loc_done)
 
     # Node initialization
     rospy.init_node('localize_itself', anonymous=True)
@@ -129,6 +135,8 @@ def main():
                 print(f"a bit close {elapsed_time} \n")
         rate.sleep()
     
+    is_loc_done.loc_done = True
+    loc.localization_pub.publish(is_loc_done)
     rospy.signal_shutdown("localization ended")
 
 

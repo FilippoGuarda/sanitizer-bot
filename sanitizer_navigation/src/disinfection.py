@@ -16,6 +16,7 @@ from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped, \
 from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
 from uv_visualization.msg import lowestIrradiation, subMapCoords
+from localization.msg import local
 
 
 class Disinfection:
@@ -40,6 +41,11 @@ class Disinfection:
         self.state = []
         self.flag1 = True
         self.flag2 = True
+
+
+        # Localization
+        self.localization_subscriber = rospy.Subscriber("/localization", 
+                local, self.localization_callback)
 
         # Occupancy
 
@@ -207,19 +213,34 @@ class Disinfection:
         self.lowest_y = msg.lowest_y
         self.roomDone = msg.room_done
 
+########## LOCALIZATION ##########
+
+    def localization_callback(self, msg):
+        self.localization_ended = msg.loc_done
+
 
 ########## MAIN ##########
 
 def main():
     obc = Disinfection()
 
-    # Node initialization
-
+    
     #TODO: move localization to separate file
     rospy.init_node('simple_class', anonymous=True)
     rate = rospy.Rate(10)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
-    
+
+    # the following is a semaphore-like waiting block
+    # that ensures localization execution
+
+
+    # waits for the start of the localization node
+    while obc.localization_ended:
+        rate.sleep(3)
+
+    # waits for the end of the localization node
+    while not obc.localization_ended: 
+        rate.sleep(3) 
 
 
     # Read the rooms file

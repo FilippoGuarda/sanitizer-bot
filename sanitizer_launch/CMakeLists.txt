@@ -11,6 +11,18 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_runtime
+)
+
+add_message_files(
+  FILES
+  lowestIrradiation.msg
+  subMapCoords.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
