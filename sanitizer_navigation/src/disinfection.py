@@ -233,7 +233,6 @@ def main():
     # the following is a semaphore-like waiting block
     # that ensures localization execution
 
-
     # waits for the start of the localization node
     while obc.localization_ended:
         rate.sleep(3)
