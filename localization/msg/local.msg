@@ -1,1 +1,1 @@
-bool loc_done = false
+bool loc_done 
