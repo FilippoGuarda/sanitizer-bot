@@ -41,6 +41,7 @@ class Disinfection:
         self.state = []
         self.flag1 = True
         self.flag2 = True
+        self.localization_ended = False
 
 
         # Localization
@@ -235,11 +236,13 @@ def main():
 
     # waits for the start of the localization node
     while obc.localization_ended:
-        rate.sleep(3)
+        rate.sleep()
+    rospy.loginfo("Localization Started")   
 
     # waits for the end of the localization node
     while not obc.localization_ended: 
-        rate.sleep(3) 
+        rate.sleep()
+    rospy.loginfo("Localization ended")
 
 
     # Read the rooms file
@@ -301,18 +304,23 @@ def main():
 
             # Publish the goal to reach
 
-            rospy.loginfo(str(x_goal) + str(y_goal))
+            rospy.loginfo(str(x_goal) + " " + str(y_goal))
 
             # Goal published synchronised with the timer initialized before
 
             rospy.loginfo(obc.wait)
-            if time.time() - tim > 4:
+            """ if time.time() - tim > 4:
                 obc.goalToPublish.pose.pose.position.x = x_goal
                 obc.flag2 = True
                 obc.flag1 = True
                 obc.goalToPublish.pose.pose.position.y = y_goal
                 obc.pub.publish(obc.goalToPublish)
-                tim = time.time()
+                tim = time.time() """
+            
+            next_pos = obc.movebase_client((x_goal, y_goal))
+            while not next_pos:
+                rate.sleep()
+            rospy.loginfo("Position reached")
 
             rate.sleep()
 

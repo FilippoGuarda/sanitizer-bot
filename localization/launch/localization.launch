@@ -1,10 +1,8 @@
 <launch>
-    <include file="$(find turtlebot3_big_house)/launch/turtlebot3_big_house.launch" />
-    <!-- <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch" /> -->
-    <!-- <include file="$(find turtlebot3_navigation)/launch/move_base.launch" /> -->
+    <!-- <include file="$(find turtlebot3_big_house)/launch/turtlebot3_big_house.launch" />
     <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
     <arg name="map_file" value="/home/watch/Documents/uv_bot/my_map.yaml" />
-    </include> 
-    <node pkg="localization" type="localization.py" name="localization" output="screen" launch-prefix="gnome-terminal --command"/>
+    </include>  -->
+    <node pkg="localization" type="localization_exec.py" name="localization_exec" output="screen" />
     <!-- <node name="goals" pkg="simple_navigation_goals" type="simple_navigation_goals.py" output="screen"/> -->
 </launch>

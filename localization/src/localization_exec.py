@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+
 import rospy
 import numpy as np
 import actionlib
@@ -8,13 +10,12 @@ from std_msgs.msg import Int64
 from std_srvs.srv import SetBool, Empty
 import sys
 from std_msgs.msg import Float64MultiArray
-from localization.msg import local
-
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import String
 from geometry_msgs.msg import Twist
 from rosservice import *
+from localization.msg import local as local_msg
 
 
 class Localization:
@@ -32,7 +33,7 @@ class Localization:
         self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
         # Localization ended ack
-        self.localization_pub = rospy.Publisher("/localization", local, queue_size=1)
+        self.localization_pub = rospy.Publisher("/localization", local_msg, queue_size=1)
 
 ########## LASER SCAN #########
 
@@ -50,17 +51,20 @@ class Localization:
 def main():
     loc = Localization()
 
-    is_loc_done = local()
-    is_loc_done.loc_done = False
-    loc.localization_pub.publish(is_loc_done)
+    
 
     # Node initialization
     rospy.init_node('localize_itself', anonymous=True)
+    is_loc_done = local_msg()
+    is_loc_done.loc_done = False
+    rospy.loginfo(is_loc_done)
+    loc.localization_pub.publish(is_loc_done)
+
     rate = rospy.Rate(10)  # 10hz
 
     g = rospy.ServiceProxy('/global_localization', Empty)
     t = rospy.ServiceProxy('/move_base/clear_costmaps', Empty)
-    g()
+    
     start_time = time.time()
     change_done = False
     tt = 30
@@ -104,8 +108,11 @@ def main():
         msg.linear.x = 0.5      
         #msg.angular.z = -turn_rate/5
         loc.vel_pub.publish(msg)
-        angle3 = loc.laser_scan_values[0:25]
-        angle2 = loc.laser_scan_values[335:360]
+        #front left
+        angle3 = loc.laser_scan_values[0:30]
+        #front righ
+        angle2 = loc.laser_scan_values[330:360]
+        #right side
         angle4 = loc.laser_scan_values[250:290]
         angle = angle3+angle2
 
@@ -122,7 +129,7 @@ def main():
         for i in range(len(angle4)):
             if angle4[i] >= 1 and not turning:
                 msg.linear.x = 0.5
-                msg.angular.z = -turn_rate
+                msg.angular.z = -turn_rate/2
                 loc.vel_pub.publish(msg)
             if angle4[i] <= 1 and angle4[i] >= 0.5 and not turning:
                 msg.linear.x = 0.5
@@ -136,6 +143,7 @@ def main():
         rate.sleep()
     
     is_loc_done.loc_done = True
+    rospy.loginfo(is_loc_done)
     loc.localization_pub.publish(is_loc_done)
     rospy.signal_shutdown("localization ended")
 
