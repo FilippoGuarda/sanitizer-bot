@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+from turtle import speed
 import rospy
 import numpy as np
 import actionlib
@@ -69,6 +70,7 @@ def main():
     change_done = False
     tt = 30
     turn_rate = 1
+    speed_forward = 0.5
 
     # navigate map using bug algorithm without a target,
     # this makes the turtlebot follow the perimeter of the building
@@ -87,59 +89,113 @@ def main():
             if reboot == ("Y"):
                 g()
                 t()
-                msg.linear.x = 0.5
-                msg.angular.z = 0.2
+                # msg.angular.z = 0
+                # msg.linear.x = speed_forward
                 loc.vel_pub.publish(msg)
             elif reboot == ("N"):
                 t()
                 break
             elif reboot == ("C"):
                 t()
-                msg.linear.x = 0.5
-                msg.angular.z = 0.0
+                # msg.linear.x = speed_forward
+                # msg.angular.z = 0.0
                 loc.vel_pub.publish(msg)
             else:
-                msg.linear.x = 0.5
-                msg.angular.z = 0.0
+                # msg.linear.x = speed_forward
+                # msg.angular.z = 0.0
                 loc.vel_pub.publish(msg)
                 pass
 
         # Definition of speed of motion
-        msg.linear.x = 0.5      
-        #msg.angular.z = -turn_rate/5
+        msg.linear.x = speed_forward      
+        msg.angular.z = 0
         loc.vel_pub.publish(msg)
         #front left
-        angle3 = loc.laser_scan_values[0:30]
+        angle3 = loc.laser_scan_values[0:20]
         #front righ
-        angle2 = loc.laser_scan_values[330:360]
-        #right side
-        angle4 = loc.laser_scan_values[250:290]
+        angle2 = loc.laser_scan_values[340:360]
         angle = angle3+angle2
-
+        rsAngle = loc.laser_scan_values[20:40]
+        lsAngle = loc.laser_scan_values[320:340]
+        #right side
+        angle4 = loc.laser_scan_values[270:290]
+        angle5 = loc.laser_scan_values[250:270]
+        turning = False
         # Publishing of the velocity
+        # turn away from a wall (left) in front of robot
         for i in range(len(angle)):
-            if angle[i] <= 0.75:
+            if angle[i] <= 0.5:
                 msg.linear.x = 0.0
                 msg.angular.z = turn_rate
                 loc.vel_pub.publish(msg)
                 turning = True
+                break
             else:
                 turning = False
-        # keep distance from wall
-        for i in range(len(angle4)):
-            if angle4[i] >= 1 and not turning:
-                msg.linear.x = 0.5
+        if not turning:
+            #turn a bit left when approaching wall from right
+            for i in range(len(rsAngle)):
+                if rsAngle[i] <= 0.5:
+                    msg.linear.x = speed_forward
+                    msg.angular.z = -turn_rate/2
+                    loc.vel_pub.publish(msg)
+                    turning = True
+                    break
+        if not turning:
+            #turn a bit right when approaching wall from left
+            for i in range(len(lsAngle)):
+                if lsAngle[i] <= 0.5:
+                    msg.linear.x = speed_forward
+                    msg.angular.z = turn_rate/2
+                    loc.vel_pub.publish(msg)
+                    turning = True
+                    break
+        
+        if not turning:
+            maxrAngle = 0
+            maxlAngle = 0
+            for i in range(len(angle4)):
+                if angle4[i] > maxlAngle:
+                    maxlAngle = angle4[i]
+            for i in range(len(angle5)):
+                if angle5[i] > maxrAngle:
+                    maxrAngle = angle5[i]
+            if maxrAngle > 3 and maxlAngle < 3:
+                msg.angular.z = -turn_rate
+                msg.linear.x = 0
+            elif maxrAngle > maxlAngle:
+                msg.angular.z = turn_rate/2
+                msg.linear.x = speed_forward
+            elif maxrAngle < maxlAngle:
                 msg.angular.z = -turn_rate/2
-                loc.vel_pub.publish(msg)
-            if angle4[i] <= 1 and angle4[i] >= 0.5 and not turning:
-                msg.linear.x = 0.5
+                msg.linear.x = speed_forward
+            else:
                 msg.angular.z = 0
-                loc.vel_pub.publish(msg)
-            if angle4[i] <= 0.5 and not turning:
-                msg.linear.x = 0.5
-                msg.angular.z = turn_rate
-                loc.vel_pub.publish(msg)
-                print(f"a bit close {elapsed_time} \n")
+                msg.linear.x = speed_forward
+            loc.vel_pub.publish(msg)
+
+        """ # turning based on lateral distance from walls
+        if not turning:
+            for i in range(len(angle4)):
+                if angle4[i] > 1:
+                    msg.linear.x = speed_forward
+                    msg.angular.z = 0
+                    loc.vel_pub.publish(msg)
+                # a bit right to keep close to wall 
+                if angle4[i] <= 1.5 and angle4[i] > 1:
+                    msg.linear.x = speed_forward
+                    msg.angular.z = -turn_rate/4
+                    loc.vel_pub.publish(msg)
+                if angle4[i] <= 1 and angle4[i] > 0.5:
+                    msg.linear.x = speed_forward
+                    msg.angular.z = 0
+                    loc.vel_pub.publish(msg)
+                # a bit left to not crash
+                if angle4[i] <= 0.5:
+                    msg.linear.x = speed_forward
+                    msg.angular.z = turn_rate/4
+                    loc.vel_pub.publish(msg)
+                    print(f"a bit close {elapsed_time} \n")     """
         rate.sleep()
     
     is_loc_done.loc_done = True

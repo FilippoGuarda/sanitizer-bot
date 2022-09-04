@@ -3,6 +3,6 @@
     <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
     <arg name="map_file" value="/home/watch/Documents/uv_bot/my_map.yaml" />
     </include>  -->
-    <node pkg="localization" type="localization_exec.py" name="localization_exec" output="screen" />
+    <node pkg="localization" type="localization_exec.py" name="localization_exec" output="screen" launch-prefix="gnome-terminal --command"/>
     <!-- <node name="goals" pkg="simple_navigation_goals" type="simple_navigation_goals.py" output="screen"/> -->
 </launch>

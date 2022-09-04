@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+from importlib.resources import read_text
 from operator import sub
 from unittest import result
 import rospy
@@ -85,13 +86,55 @@ class Disinfection:
 ########## MOVE_BASE ##########
 
     def movebase_client(self, msg):
+        # we create an instance of movebasegoal based on a simple goal in form of (x, y) pos
+
+        # Create an action client called "move_base" with action definition file "MoveBaseAction"
+        self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+        self.client.wait_for_server()
+
+        self.x = msg[0]
+        self.y = msg[1]
+
+        goal = MoveBaseGoal()
+        goal.target_pose.header.frame_id = 'map'
+        goal.target_pose.header.stamp = rospy.Time.now()
+
+        goal.target_pose.pose.position.x = self.x
+        goal.target_pose.pose.position.y = self.y
+        goal.target_pose.pose.orientation.w = 1.0
+        rospy.loginfo(goal)
+        self.client.send_goal(goal)
+        self.wait = self.client.wait_for_result()
+        state = self.client.get_state()
+        if not self.finishedFlag:
+
+            # If the result doesn't arrive, assume the Server is not available
+
+            if not self.wait:
+                rospy.logerr('Action server not available!')
+                rospy.signal_shutdown('Action server not available!')
+            else:
+
+                # Result of executing the action
+
+                self.state = self.client.get_state()
+                rospy.loginfo('STATE OF GOAL' + str(state))
+                return self.client.get_result()
+        else:
+
+            rospy.loginfo('Coronavirus destroyed!')
+            rospy.signal_shutdown('Coronavirus destroyed!')
+
+
+
+"""  def movebase_client(self, msg):
         
         if self.initFlag:
             x_goal = msg[0]
             y_goal = msg[1]
         else:
             x_goal = msg.pose.pose.position.x
-            y_goal = msg.pose.pose.position.y
+            y_goal = msg.pose.pose.position.w   
 
         # Create an action client called "move_base" with action definition file "MoveBaseAction"
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
@@ -101,6 +144,7 @@ class Disinfection:
         
         # Creates a new goal with the MoveBaseGoal constructor
         goal = MoveBaseGoal()
+        # Setting Header frame to map means we are navigating to a point wrt the map frame
         goal.target_pose.header.frame_id = 'map'
         goal.target_pose.header.stamp = rospy.Time.now()
 
@@ -149,7 +193,7 @@ class Disinfection:
         else:
 
             rospy.loginfo('Coronavirus destroyed!')
-            rospy.signal_shutdown('Coronavirus destroyed!')
+            rospy.signal_shutdown('Coronavirus destroyed!') """
 
 ########## ODOMETRY ##########
 
@@ -247,9 +291,8 @@ def main():
 
     # Read the rooms file
 
-    rooms = \
-        open('/home/watch/Documents/uv_bot/src/sanitizer_navigation/src/rooms.txt'
-             , 'r')
+    rooms = open('/home/watch/Documents/uv_bot/src/sanitizer_navigation/src/rooms.txt', 'r')
+
     for (num, room) in enumerate(rooms, start=1):
 
         obc.initFlag = 1
@@ -283,20 +326,21 @@ def main():
 
         # Select as starting point the center of the room
 
-        start_x = x2 - x1 / 2  
-        start_y = y2 - y1 / 2 
+        start_x = x2 + x1 / 2  
+        start_y = y2 + y1 / 2 
 
         # Call the movebase function to reach the initial point in the room
-
+        rospy.loginfo(f"center of the room is at {start_x} and {start_y}")
         result_init = obc.movebase_client((start_x, start_y))
         if result_init:
             rospy.loginfo("I'm in the room")
         time.sleep(1)
-        obc.initFlag = 0
-
+        #obc.initFlag = 0
+        input("Enter to proceed \n")
         # Kill coronavirus in the room
 
         tim = time.time()
+        nTarget = 0
         while not rospy.is_shutdown() and not obc.roomDone:
 
             x_goal = obc.lowest_x
@@ -304,7 +348,7 @@ def main():
 
             # Publish the goal to reach
 
-            rospy.loginfo(str(x_goal) + " " + str(y_goal))
+            rospy.loginfo(str(x_goal) + " " + str(y_goal) + " " + str(obc.roomDone))
 
             # Goal published synchronised with the timer initialized before
 
@@ -318,9 +362,10 @@ def main():
                 tim = time.time() """
             
             next_pos = obc.movebase_client((x_goal, y_goal))
-            while not next_pos:
-                rate.sleep()
-            rospy.loginfo("Position reached")
+            if next_pos:
+                rospy.loginfo(f"target {nTarget} reached")
+                nTarget+1 
+
 
             rate.sleep()
 
