@@ -63,12 +63,14 @@ void subMapCallback(const uv_visualization::subMapCoords::ConstPtr &msg)
 {
   if ((subMap_x1 != msg->x1) or (subMap_y1 != msg->y1))
   {
+    ROS_INFO("Uv_map received SUB map");
     roomDone = false;
+    subMap_x1 = msg->x1;
+    subMap_y1 = msg->y1;
+    subMap_x2 = msg->x2;
+    subMap_y2 = msg->y2;
+    ROS_INFO("Sub map size is %f, %f", subMap_x2-subMap_x1, subMap_y2 - subMap_y1);
   }
-  subMap_x1 = msg->x1;
-  subMap_y1 = msg->y1;
-  subMap_x2 = msg->x2;
-  subMap_y2 = msg->y2;
 }
 
 /***/
@@ -124,7 +126,7 @@ int main(int argc, char **argv)
 
       Start = std::chrono::steady_clock::now();
 
-      ROS_INFO("Delta T: %f", deltaT_s);
+      // ROS_INFO("Delta T: %f", deltaT_s);
       // Circle iterator specifications
       Position center(turtle_odom.pose.pose.position.x - MAP_ODOM_X_DISPLACEMENT, turtle_odom.pose.pose.position.y - MAP_ODOM_Y_DISPLACEMENT);
 
@@ -175,16 +177,22 @@ int main(int argc, char **argv)
           }
         }
 
-        Index submapStartIndex(subMap_x1, subMap_y1);
-        Index submapBufferSize(subMap_x2 - subMap_x1, subMap_y2 - subMap_y1);
-
+        int intSubMap_x1 = int(subMap_x1)
+        int intSubMap_y1 = int(subMap_y1)
+        int intBufferSize_x = int(subMap_x2 - subMap_x1)
+        int intBufferSize_y = int(subMap_y2 - subMap_y1)
+        Index submapStartIndex(intSubMap_x1, intSubMap_y1);
+        Index submapBufferSize(intBufferSize_x, intBuffersize_y);
+        grid_map::Matrix& data = map["layer1"];
+        map["layer1"].
         for (grid_map::SubmapIterator iterator(map1, submapStartIndex, submapBufferSize); !iterator.isPastEnd(); ++iterator)
         {
           if (map1.atPosition("Layer1", currentPosition) < minPower)
           {
+            ROS_INFO("lowest irradiation updated");
             minPower = map1.atPosition("Layer1", currentPosition);
-            lowestIrradiation_x = currentPosition.x();
-            lowestIrradiation_y = currentPosition.y();
+            lowestIrradiation_x = currentPosition.x() + subMap_x1;
+            lowestIrradiation_y = currentPosition.y() + subMap_y1;
           }
         }
         if (minPower >= cleanTreshold)
