@@ -19,8 +19,8 @@
 using namespace grid_map;
 
 /* Globals variables */
-grid_map::GridMap map({"Layer1"});
-grid_map::GridMap map1({"Layer1"});
+grid_map::GridMap map({"irradiation"});
+grid_map::GridMap map1({"irradiation"});
 nav_msgs::Odometry turtle_odom;
 float map_size_x;
 float map_size_y;
@@ -35,6 +35,7 @@ float lowestIrradiation_x;
 float lowestIrradiation_y;
 bool roomDone = false;
 bool mapOk = false;
+bool tempGoalReached = false;
 
 /*** Callbacks ***/
 void odomCallback(const nav_msgs::Odometry::ConstPtr &msg)
@@ -49,7 +50,7 @@ void gridMapCallback(const nav_msgs::OccupancyGrid &msg)
 {
   ROS_INFO("Received Grid Map");
   // Save a copy of the received map
-  grid_map::GridMapRosConverter::fromOccupancyGrid(msg, {"Layer1"}, map);
+  grid_map::GridMapRosConverter::fromOccupancyGrid(msg, {"irradiation"}, map);
 
   mapOk = true;
   map_size_x = map.getSize()(0);
@@ -91,7 +92,7 @@ int main(int argc, char **argv)
   map1.setGeometry(Length(19.2, 19.2), 0.05, Position(-0.4, -0.4));
 
   // Initialize grid map with all zeros
-  grid_map::Matrix &data = map1["Layer1"];
+  grid_map::Matrix &data = map1["irradiation"];
   for (grid_map::GridMapIterator iterator(map1); !iterator.isPastEnd(); ++iterator)
   {
     const int i = iterator.getLinearIndex();
@@ -105,7 +106,8 @@ int main(int argc, char **argv)
   float distance;
   bool obstacleFound = false; // if true an obstacle is found between two cell
   float tempPower = 0;
-  float minPower = 100;
+  float minPower = cleanTreshold;
+  float newMinPower = cleanTreshold;
   long int deltaT; // loop time in [ms]
   float deltaT_s;  // loop time in [s]
 
@@ -150,7 +152,7 @@ int main(int argc, char **argv)
           {
 
             // Obstacle Check
-            if (map.at("Layer1", *iterator1) == obstacle_value)
+            if (map.at("irradiation", *iterator1) == obstacle_value)
               obstacleFound = true;
 
             // If obstacle is found exit the line iterator
@@ -159,41 +161,47 @@ int main(int argc, char **argv)
           }
 
           // Update Energy
-          if ((obstacleFound == false) && (map.at("Layer1", *iterator) != obstacle_value))
+          if ((obstacleFound == false) && (map.at("irradiation", *iterator) != obstacle_value))
           {
 
             distance = pow(turtle_odom.pose.pose.position.x - currentPosition.x(), 2) + pow(turtle_odom.pose.pose.position.y - currentPosition.y(), 2);
 
-            tempPower = map1.atPosition("Layer1", currentPosition) + (Power * (deltaT_s)) / distance;
+            tempPower = map1.atPosition("irradiation", currentPosition) + (Power * (deltaT_s)) / distance;
 
             if (tempPower >= cleanTreshold)
             {
-              map1.atPosition("Layer1", currentPosition) = cleanTreshold;
+              map1.atPosition("irradiation", currentPosition) = cleanTreshold;
             }
             else
             {
-              map1.atPosition("Layer1", currentPosition) = tempPower;
+              map1.atPosition("irradiation", currentPosition) = tempPower;
             }
           }
         }
 
-        int intSubMap_x1 = int(subMap_x1)
-        int intSubMap_y1 = int(subMap_y1)
-        int intBufferSize_x = int(subMap_x2 - subMap_x1)
-        int intBufferSize_y = int(subMap_y2 - subMap_y1)
+        
+        int intSubMap_x1 = int(subMap_x1);
+        int intSubMap_y1 = int(subMap_y1);
+        int intBufferSize_x = int(subMap_x2 - subMap_x1);
+        int intBufferSize_y = int(subMap_y2 - subMap_y1);
         Index submapStartIndex(intSubMap_x1, intSubMap_y1);
-        Index submapBufferSize(intBufferSize_x, intBuffersize_y);
-        grid_map::Matrix& data = map["layer1"];
-        map["layer1"].
+        Index submapBufferSize(intBufferSize_x, intBufferSize_y);
+        grid_map::Matrix& data = map["irradiation"];
+        newMinPower = cleanTreshold;
         for (grid_map::SubmapIterator iterator(map1, submapStartIndex, submapBufferSize); !iterator.isPastEnd(); ++iterator)
         {
-          if (map1.atPosition("Layer1", currentPosition) < minPower)
+          //ROS_INFO("current power %f", (map1.atPosition("irradiation", currentPosition)));
+          if (map1.atPosition("irradiation", currentPosition) < newMinPower)
           {
-            ROS_INFO("lowest irradiation updated");
-            minPower = map1.atPosition("Layer1", currentPosition);
+            newMinPower = map1.atPosition("irradiation", currentPosition);
             lowestIrradiation_x = currentPosition.x() + subMap_x1;
             lowestIrradiation_y = currentPosition.y() + subMap_y1;
           }
+        }
+        if (minPower < newMinPower)
+        {
+            minPower = newMinPower;
+            ROS_INFO("lowest irradiation updated = %f. at %f,%f", minPower, lowestIrradiation_x, lowestIrradiation_y);
         }
         if (minPower >= cleanTreshold)
         {
