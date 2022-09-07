@@ -9,9 +9,11 @@
   </include> 
   <!-- Launch the grid map simple demo node -->
   <node pkg="uv_visualization" type="uv_visualization" name="uv_visualization" output="screen" />
+
   <!-- Launch the grid map visualizer -->
   <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
     <rosparam command="load" file="$(find uv_visualization)/config/uv_visualization_params.yaml" />
   </node>
-  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find uv_visualization)/rviz/turtlebot3_uv_map.rviz" />
+
 </launch>
