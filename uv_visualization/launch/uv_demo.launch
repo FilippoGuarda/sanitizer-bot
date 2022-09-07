@@ -6,6 +6,7 @@
 
   <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
   <arg name="map_file" value="/home/watch/Documents/uv_bot/my_map.yaml" />
+  <arg name="open_rviz" value="true" />
   </include> 
   <!-- Launch the grid map simple demo node -->
   <node pkg="uv_visualization" type="uv_visualization" name="uv_visualization" output="screen" />
@@ -14,6 +15,6 @@
   <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
     <rosparam command="load" file="$(find uv_visualization)/config/uv_visualization_params.yaml" />
   </node>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find uv_visualization)/rviz/turtlebot3_uv_map.rviz" />
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find uv_visualization)/rviz/turtlebot3_uv_map.rviz" /> -->
 
 </launch>

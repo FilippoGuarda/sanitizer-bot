@@ -13,8 +13,8 @@
 
 #define Power 0.1
 #define cleanTreshold 10.0
-#define MAP_ODOM_X_DISPLACEMENT -0.14
-#define MAP_ODOM_Y_DISPLACEMENT -0.18
+#define MAP_ODOM_X_DISPLACEMENT -0.0
+#define MAP_ODOM_Y_DISPLACEMENT -0.0
 
 using namespace grid_map;
 
@@ -33,7 +33,7 @@ float subMap_x2;
 float subMap_y2;
 float lowestIrradiation_x;
 float lowestIrradiation_y;
-bool roomDone = false;
+bool roomDone = true;
 bool mapOk = false;
 bool tempGoalReached = false;
 
@@ -70,7 +70,7 @@ void subMapCallback(const uv_visualization::subMapCoords::ConstPtr &msg)
     subMap_y1 = msg->y1;
     subMap_x2 = msg->x2;
     subMap_y2 = msg->y2;
-    ROS_INFO("Sub map size is %f, %f", subMap_x2-subMap_x1, subMap_y2 - subMap_y1);
+    ROS_INFO("Sub map size is %f, %f", subMap_x2-subMap_x1, subMap_y2-subMap_y1);
   }
 }
 
@@ -79,7 +79,7 @@ void subMapCallback(const uv_visualization::subMapCoords::ConstPtr &msg)
 int main(int argc, char **argv)
 {
   // Initialize node, publisher and subscriber.
-  ros::init(argc, argv, "UV_visualization_node");
+  ros::init(argc, argv, "uv_visualization");
   ros::NodeHandle nh("~");
   ros::Subscriber grid_map_sub_ = nh.subscribe("/map", 1, gridMapCallback);
   ros::Subscriber odom_sub_ = nh.subscribe("/odom", 1, odomCallback);
@@ -180,33 +180,36 @@ int main(int argc, char **argv)
         }
 
         
-        int intSubMap_x1 = int(subMap_x1);
-        int intSubMap_y1 = int(subMap_y1);
-        int intBufferSize_x = int(subMap_x2 - subMap_x1);
-        int intBufferSize_y = int(subMap_y2 - subMap_y1);
-        Index submapStartIndex(intSubMap_x1, intSubMap_y1);
-        Index submapBufferSize(intBufferSize_x, intBufferSize_y);
-        grid_map::Matrix& data = map["irradiation"];
-        newMinPower = cleanTreshold;
-        for (grid_map::SubmapIterator iterator(map1, submapStartIndex, submapBufferSize); !iterator.isPastEnd(); ++iterator)
+        if(not roomDone)
         {
-          //ROS_INFO("current power %f", (map1.atPosition("irradiation", currentPosition)));
-          if (map1.atPosition("irradiation", currentPosition) < newMinPower)
+          // find less irradiated point in the room
+          int intSubMap_x1 = int(subMap_x1);
+          int intSubMap_y1 = int(subMap_y1);
+          int intBufferSize_x = int(subMap_x2 - subMap_x1);
+          int intBufferSize_y = int(subMap_y2 - subMap_y1);
+          Index submapStartIndex(round(subMap_x1/map_resolution), round(subMap_y1/map_resolution));
+          Index submapBufferSize(round(intBufferSize_x/map_resolution), round(intBufferSize_y/map_resolution));
+          newMinPower = cleanTreshold;
+          for (grid_map::SubmapIterator iterator(map1, submapStartIndex, submapBufferSize); !iterator.isPastEnd(); ++iterator)
           {
-            newMinPower = map1.atPosition("irradiation", currentPosition);
-            lowestIrradiation_x = currentPosition.x() + subMap_x1;
-            lowestIrradiation_y = currentPosition.y() + subMap_y1;
+            //ROS_INFO("current power %f", (map1.atPosition("irradiation", currentPosition)));
+            if (map1.atPosition("irradiation", currentPosition) < newMinPower)
+            {
+              newMinPower = map1.atPosition("irradiation", currentPosition);
+              lowestIrradiation_x = currentPosition.x()*map_resolution + subMap_x1;
+              lowestIrradiation_y = currentPosition.y()*map_resolution + subMap_y1;
+            }
           }
-        }
-        if (minPower < newMinPower)
-        {
-            minPower = newMinPower;
-            ROS_INFO("lowest irradiation updated = %f. at %f,%f", minPower, lowestIrradiation_x, lowestIrradiation_y);
-        }
-        if (minPower >= cleanTreshold)
-        {
-          roomDone = true;
-        }
+          if (minPower < newMinPower)
+          {
+              minPower = newMinPower;
+              ROS_INFO("lowest irradiation updated = %f. at %f,%f", minPower, lowestIrradiation_x, lowestIrradiation_y);
+          }
+          if (minPower >= cleanTreshold)
+          {
+            roomDone = true;
+          }
+        } 
       }
     }
 

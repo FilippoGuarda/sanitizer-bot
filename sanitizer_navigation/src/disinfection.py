@@ -237,13 +237,13 @@ def main():
 
         # Top-right corner coordinates
 
-        x1 = float(roomList[0])
-        y1 = float(roomList[1])
+        x1 = float(roomList[2])
+        y1 = float(roomList[3])
 
         # Bottom-left corner coordinates
 
-        x2 = float(roomList[2])
-        y2 = float(roomList[3])
+        x2 = float(roomList[0])
+        y2 = float(roomList[1])
 
         coords = subMapCoords()
         coords.x1 = x1 
