@@ -202,7 +202,8 @@ def main():
     
     #TODO: move localization to separate file
     rospy.init_node('simple_class', anonymous=True)
-    rate = rospy.Rate(10)  # 10hz
+    rate = rospy.Rate(10)
+    big_sleep = rospy.Rate(0.5)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
 
     # the following is a semaphore-like waiting block
@@ -298,7 +299,7 @@ def main():
                 nTarget+1 
 
 
-            rate.sleep()
+            big_sleep.sleep()
 
     # Set flag to terminate the node
 

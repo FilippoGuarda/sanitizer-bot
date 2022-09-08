@@ -11,8 +11,8 @@
 
 #include "uv_utility.h"
 
-#define Power 0.1
-#define cleanTreshold 30.0
+#define Power 0.5
+#define cleanTreshold 10.0
 #define MAP_ODOM_X_DISPLACEMENT -0.0
 #define MAP_ODOM_Y_DISPLACEMENT -0.0
 
@@ -31,6 +31,8 @@ float subMap_x1 = 0;
 float subMap_y1 = 0;
 float subMap_x2 = 0;
 float subMap_y2 = 0;
+float sub_lowest_irradiation_x;
+float sub_lowest_irradiation_y;
 float lowest_irradiation_x;
 float lowest_irradiation_y;
 bool roomDone = true;
@@ -100,7 +102,8 @@ int main(int argc, char **argv)
   }
 
   Position currentPosition;  
-  Position currentSubPosition;     // store current robot position for the circle and sub iterator
+  Position currentSubPosition;   
+  Position miniPosition;          // store current robot position for the circles and sub iterator
   const double radius = 19.2;     // radius for the circle iterator
   const int obstacle_value = 100;  // value for a cell obstructed by a wall
 
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
   auto End = std::chrono::steady_clock::now();
   auto Start = std::chrono::steady_clock::now();
 
-  ros::Rate rate(2.0);
+  ros::Rate rate(20);
 
   while (nh.ok())
   {
@@ -184,46 +187,65 @@ int main(int argc, char **argv)
       if(not roomDone)
       {
         // find less irradiated point in the room
-        int intSubMap_x1 = int(subMap_x1);
-        int intSubMap_y1 = int(subMap_y1);
-        int intBufferSize_x = int(subMap_x2 - subMap_x1);
-        int intBufferSize_y = int(subMap_y2 - subMap_y1);
+        float BufferSize_x = (subMap_x2 - subMap_x1);
+        float BufferSize_y = (subMap_y2 - subMap_y1);
         int iterationCounter = 0;
-        Index submapStartIndex(round(subMap_x1/map_resolution)+ map_size_x / 2, round(subMap_y1/map_resolution)+map_size_y / 2);
-        Index submapBufferSize(round(intBufferSize_x/map_resolution), round(intBufferSize_y/map_resolution));
+        bool feasibleGoal = true;
+        float distanceFromCentre = 0;
+        Index submapStartIndex(round(-(subMap_x2-map_position_x)/map_resolution)+ map_size_x / 2, round(-(subMap_y2-map_position_y)/map_resolution)+map_size_y / 2);
+        Index submapBufferSize(round(BufferSize_x/map_resolution), round(BufferSize_y/map_resolution));
         newMinPower = cleanTreshold;
-        ROS_INFO("%d, %d",submapStartIndex[0], submapStartIndex[1]);
-        ROS_INFO("%d, %d",submapBufferSize[0], submapBufferSize[1]);
         for (grid_map::SubmapIterator subIterator(map1, submapStartIndex, submapBufferSize); !subIterator.isPastEnd(); ++subIterator)
         {
           map1.getPosition(*subIterator, currentSubPosition);
-          map1.atPosition("irradiation", currentSubPosition) = map1.atPosition("irradiation", currentSubPosition) + 1.0;
-        //   map.getPosition(*iterator, currentPosition);
-        //   //this prevents the turtlebot setting a new goal under itself
-        //   if (sqrt(pow(center.x() - currentPosition.x(), 2) + pow(center.y() - currentPosition.y(), 2)) <= 0.11)
-        //   {
-        //     continue;
-        //   }
-        //   //ROS_INFO("current power %f", (map1.atPosition("irradiation", currentPosition)));
-        //   if (0 < map1.atPosition("irradiation", currentPosition) < newMinPower)
-        //   {
-        //     newMinPower = map1.atPosition("irradiation", currentPosition);
-        //     lowest_irradiation_x = currentPosition.x()*map_resolution;
-        //     lowest_irradiation_y = currentPosition.y()*map_resolution;
-        //   }
-        //   iterationCounter ++;
-        // }
-        // if (minPower < newMinPower)
-        // {
-        //     minPower = newMinPower;
-        //     ROS_INFO("lowest irradiation updated = %f. at %f,%f", minPower, lowest_irradiation_x, lowest_irradiation_y);
-        //     ROS_INFO("%d", iterationCounter);
-        // }
-        // if (minPower >= cleanTreshold)
-        // {
-        //   ROS_INFO("this room is done");
-        //   roomDone = true;
-        //   minPower = 0;
+          //map1.atPosition("irradiation", currentSubPosition) = map1.atPosition("irradiation", currentSubPosition) + 0.01;
+
+          feasibleGoal = true;
+          Position miniCenter(currentSubPosition);
+          //Position miniCentre((-(subMap_x2-map_position_x)/map_resolution+ map_size_x / 2, -(subMap_y2-map_position_y)/map_resolution+map_size_y / 2));
+          for (grid_map::CircleIterator miniCircle(map1, miniCenter, 0.40); !miniCircle.isPastEnd(); ++miniCircle)
+          {
+            map1.getPosition(*miniCircle, miniPosition);
+            distanceFromCentre = (sqrt(pow(center.x() - miniPosition.x(), 2) + pow(center.y() - miniPosition.y(), 2)));
+            if((distanceFromCentre <= 0.11) or (map.atPosition("irradiation", miniPosition) == obstacle_value))
+            {
+              feasibleGoal = false;
+              //ROS_INFO("too close");
+              break;
+            }
+            // else
+            // {
+            //   map1.atPosition("irradiation", miniPosition) += 0.1;
+            // }
+          }
+
+          // if (feasibleGoal)
+          // {
+          //   map1.atPosition("irradiation", currentSubPosition) = map1.atPosition("irradiation", currentSubPosition) + 0.1;
+          // }
+          //ROS_INFO("current power %f", (map1.atPosition("irradiation", currentPosition)));
+          if ((map1.atPosition("irradiation", currentSubPosition) < newMinPower) and feasibleGoal)
+          {
+            newMinPower = map1.atPosition("irradiation", currentSubPosition);
+            sub_lowest_irradiation_x = currentSubPosition.x();
+            sub_lowest_irradiation_y = currentSubPosition.y();
+          }
+        }
+        if (minPower < newMinPower)
+        {
+            minPower = newMinPower;
+            // lowest_irradiation_x = sub_lowest_irradiation_x*map_resolution - (subMap_x1+subMap_x2)/2;
+            // lowest_irradiation_y = sub_lowest_irradiation_y*map_resolution - (subMap_y1+subMap_y2)/2;
+            lowest_irradiation_x = sub_lowest_irradiation_x;
+            lowest_irradiation_y = sub_lowest_irradiation_y;
+            ROS_INFO("lowest irradiation updated = %f. at %f,%f", minPower, lowest_irradiation_x, lowest_irradiation_y);
+            ROS_INFO("%d", iterationCounter);
+        }
+        if (minPower >= cleanTreshold)
+        {
+          ROS_INFO("this room is done");
+          roomDone = true;
+          minPower = 0;
         }
       }
     }
