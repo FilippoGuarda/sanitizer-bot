@@ -262,10 +262,10 @@ def main():
         # Call the movebase function to reach the initial point in the room
         rospy.loginfo(f"center of the room is at {start_x} and {start_y}")
         result_init = obc.movebase_client((start_x, start_y))
-        
         if result_init:
             rospy.loginfo("I'm in the room")
         time.sleep(1)
+        
         #obc.initFlag = 0
         input("Enter to proceed \n")
         # Kill coronavirus in the room
