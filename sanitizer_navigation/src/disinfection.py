@@ -125,76 +125,6 @@ class Disinfection:
             rospy.loginfo('Coronavirus destroyed!')
             rospy.signal_shutdown('Coronavirus destroyed!')
 
-
-
-"""  def movebase_client(self, msg):
-        
-        if self.initFlag:
-            x_goal = msg[0]
-            y_goal = msg[1]
-        else:
-            x_goal = msg.pose.pose.position.x
-            y_goal = msg.pose.pose.position.w   
-
-        # Create an action client called "move_base" with action definition file "MoveBaseAction"
-        self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
- 
-        # Waits until the action server has started up and started listening for goals.
-        self.client.wait_for_server()
-        
-        # Creates a new goal with the MoveBaseGoal constructor
-        goal = MoveBaseGoal()
-        # Setting Header frame to map means we are navigating to a point wrt the map frame
-        goal.target_pose.header.frame_id = 'map'
-        goal.target_pose.header.stamp = rospy.Time.now()
-
-        # Move 0.5 meters forward along the x axis of the "map" coordinate frame
-
-        goal.target_pose.pose.position.x = x_goal
-        goal.target_pose.pose.position.y = y_goal
-
-        # No rotation of the mobile base frame w.r.t. map frame
-
-        goal.target_pose.pose.orientation.w = 1.0
-        state = self.client.get_state()
-
-        if self.initFlag:
-            self.client.send_goal(goal)
-            self.wait = self.client.wait_for_result()
-        else:
-            if abs(y_goal - self.currentPose[1]) >= abs(x_goal
-                    - self.currentPose[0]):
-                goal.target_pose.pose.orientation.z = np.sign(y_goal
-                        - self.currentPose[1]) * 0.7071
-                goal.target_pose.pose.orientation.w = 0.7071
-            elif abs(x_goal - self.currentPose[0]) > abs(y_goal
-                    - self.currentPose[1]):
-                if x_goal - self.currentPose[0] < 0:
-                    goal.target_pose.pose.orientation.z = 1
-                    goal.target_pose.pose.orientation.w = 0
-
-            self.client.send_goal(goal)
-            self.wait = self.client.wait_for_result()
-
-        if not self.finishedFlag:
-
-            # If the result doesn't arrive, assume the Server is not available
-
-            if not self.wait:
-                rospy.logerr('Action server not available!')
-                rospy.signal_shutdown('Action server not available!')
-            else:
-
-                # Result of executing the action
-
-                self.state = self.client.get_state()
-                rospy.loginfo('STATE OF GOAL' + str(state))
-                return self.client.get_result()
-        else:
-
-            rospy.loginfo('Coronavirus destroyed!')
-            rospy.signal_shutdown('Coronavirus destroyed!') """
-
 ########## ODOMETRY ##########
 
     def odom_callback(self, msg):
@@ -272,7 +202,8 @@ def main():
     
     #TODO: move localization to separate file
     rospy.init_node('simple_class', anonymous=True)
-    rate = rospy.Rate(10)  # 10hz
+    rate = rospy.Rate(10)
+    big_sleep = rospy.Rate(0.5)  # 10hz
     cellSize = 0.2  # Size of a grid's cell (m)
 
     # the following is a semaphore-like waiting block
@@ -307,13 +238,13 @@ def main():
 
         # Top-right corner coordinates
 
-        x1 = float(roomList[0])
-        y1 = float(roomList[1])
+        x1 = float(roomList[2])
+        y1 = float(roomList[3])
 
         # Bottom-left corner coordinates
 
-        x2 = float(roomList[2])
-        y2 = float(roomList[3])
+        x2 = float(roomList[0])
+        y2 = float(roomList[1])
 
         coords = subMapCoords()
         coords.x1 = x1 
@@ -326,8 +257,8 @@ def main():
 
         # Select as starting point the center of the room
 
-        start_x = x2 + x1 / 2  
-        start_y = y2 + y1 / 2 
+        start_x = (x2 + x1)/ 2  
+        start_y = (y2 + y1)/ 2 
 
         # Call the movebase function to reach the initial point in the room
         rospy.loginfo(f"center of the room is at {start_x} and {start_y}")
@@ -335,6 +266,7 @@ def main():
         if result_init:
             rospy.loginfo("I'm in the room")
         time.sleep(1)
+        
         #obc.initFlag = 0
         input("Enter to proceed \n")
         # Kill coronavirus in the room
@@ -367,7 +299,7 @@ def main():
                 nTarget+1 
 
 
-            rate.sleep()
+            big_sleep.sleep()
 
     # Set flag to terminate the node
 

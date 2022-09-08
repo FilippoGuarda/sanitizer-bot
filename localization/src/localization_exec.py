@@ -68,7 +68,7 @@ def main():
     
     start_time = time.time()
     change_done = False
-    tt = 30
+    tt = 15
     turn_rate = 1
     speed_forward = 0.5
 

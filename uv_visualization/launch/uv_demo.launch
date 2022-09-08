@@ -1,0 +1,20 @@
+<launch>
+  <include file="$(find turtlebot3_big_house)/launch/turtlebot3_big_house.launch" />
+    <!-- <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch" /> -->
+    <!-- <include file="$(find turtlebot3_navigation)/launch/move_base.launch" /> -->
+    <!-- <node name="explore_lite" pkg="explore_lite" type="explore.lite" /> -->
+
+  <include file="$(find turtlebot3_navigation)/launch/turtlebot3_navigation.launch">
+  <arg name="map_file" value="/home/watch/Documents/uv_bot/my_map.yaml" />
+  <arg name="open_rviz" value="true" />
+  </include> 
+  <!-- Launch the grid map simple demo node -->
+  <node pkg="uv_visualization" type="uv_visualization" name="uv_visualization" output="screen" />
+
+  <!-- Launch the grid map visualizer -->
+  <node pkg="grid_map_visualization" type="grid_map_visualization" name="grid_map_visualization" output="screen">
+    <rosparam command="load" file="$(find uv_visualization)/config/uv_visualization_params.yaml" />
+  </node>
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find uv_visualization)/rviz/turtlebot3_uv_map.rviz" /> -->
+
+</launch>
