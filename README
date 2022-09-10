@@ -5,7 +5,8 @@ This package must be git cloned in your ROS workspace `src` folder.
 A report of the project is included in the files in pdf format.
 
 ### Other packages required: 
-EIGEN : `sudo apt-get install libeigen3-dev`
+Turtlebot3 complete install with added packages  
+EIGEN : `sudo apt-get install libeigen3-dev`  
 ANYbotics grid_map : `sudo apt-get install ros-$ROS_DISTRO-grid-map`  
   
 ### Important commands:

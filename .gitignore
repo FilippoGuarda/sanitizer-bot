@@ -11,3 +11,4 @@
 !*.msg
 !README
 !sanitizer.pdf
+!/img/*.png
