@@ -22,7 +22,7 @@ ANYbotics grid_map : `sudo apt-get install ros-$ROS_DISTRO-grid-map`
 ### Images: 
 
 ![map generation](img/explore_lite.png)
-map_generation at work
+map_generation
 
 ![sanitizer node in function](img/irradiated_map1.png)
-sanitizer_bot working
+sanitizer_bot 
